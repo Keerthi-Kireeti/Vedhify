@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, jsonify
+from flask_cors import CORS
 import json
 import requests
 import pandas as pd
@@ -9,6 +10,8 @@ from pubchem_integration import call_pubchem_api, get_fallback_compound_data
 from hypothesis_engine import generate_hypothesis
 
 app = Flask(__name__)
+# Enable CORS for all routes
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 @app.route('/')
 def index():
