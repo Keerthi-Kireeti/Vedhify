@@ -1,0 +1,21 @@
+# .cursorrules
+This is an Ayurvedic text mining MVP project.
+
+Tech stack:
+- Python 3.10+
+- Flask for backend
+- spaCy for NLP
+- Neo4j for knowledge graph
+- PubChem REST API
+
+Key concepts:
+- Extract herb names, properties (rasa, guna, virya, vipaka), and therapeutic actions from Ayurvedic texts
+- Rasa = taste (6 types: sweet, sour, salty, pungent, bitter, astringent)
+- Guna = qualities (hot/cold, heavy/light, etc.)
+- Build knowledge graph connecting herbs to properties and modern phytochemicals
+
+Code style:
+- Use type hints
+- Follow PEP 8
+- Add docstrings to all functions
+- Error handling with try-except blocks

@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Knowledge Graph - {{ herb_name }}{% endblock %}
+
+{% block content %}
+<div class="main-container">
+    <div class="header">
+        <h1><i class="fas fa-project-diagram"></i> Knowledge Graph</h1>
+        <p>Herb: {{ herb_name }}</p>
+    </div>
+    
+    <div id="graph-container" style="height: 600px; border: 1px solid #ddd; border-radius: 10px;">
+        <div class="text-center p-5">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading graph...</span>
+            </div>
+            <p class="mt-3">Loading knowledge graph...</p>
+        </div>
+    </div>
+    
+    <div class="mt-4">
+        <a href="/" class="btn btn-primary">
+            <i class="fas fa-arrow-left"></i> Back to Analysis
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadGraph();
+});
+
+function loadGraph() {
+    fetch(`/api/graph/{{ herb_name }}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.nodes && data.relationships) {
+                renderGraph(data);
+            } else {
+                document.getElementById('graph-container').innerHTML = 
+                    '<div class="text-center p-5"><p>No graph data available for this herb.</p></div>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading graph:', error);
+            document.getElementById('graph-container').innerHTML = 
+                '<div class="text-center p-5"><p>Error loading graph data.</p></div>';
+        });
+}
+
+function renderGraph(data) {
+    const container = document.getElementById('graph-container');
+    container.innerHTML = '';
+    
+    const width = container.offsetWidth;
+    const height = 600;
+    
+    const svg = d3.select(container)
+        .append('svg')
+        .attr('width', width)
+        .attr('height', height);
+    
+    const g = svg.append('g');
+    
+    // Create force simulation
+    const simulation = d3.forceSimulation(data.nodes)
+        .force('link', d3.forceLink(data.relationships).id(d => d.id))
+        .force('charge', d3.forceManyBody().strength(-300))
+        .force('center', d3.forceCenter(width / 2, height / 2));
+    
+    // Create links
+    const link = g.append('g')
+        .selectAll('line')
+        .data(data.relationships)
+        .enter().append('line')
+        .attr('stroke', '#999')
+        .attr('stroke-opacity', 0.6)
+        .attr('stroke-width', 2);
+    
+    // Create nodes
+    const node = g.append('g')
+        .selectAll('circle')
+        .data(data.nodes)
+        .enter().append('circle')
+        .attr('r', 10)
+        .attr('fill', d => {
+            if (d.name) return '#667eea'; // Herb nodes
+            if (d.cid) return '#28a745'; // Compound nodes
+            return '#ffc107'; // Property nodes
+        })
+        .call(d3.drag()
+            .on('start', dragstarted)
+            .on('drag', dragged)
+            .on('end', dragended));
+    
+    // Add labels
+    const labels = g.append('g')
+        .selectAll('text')
+        .data(data.nodes)
+        .enter().append('text')
+        .text(d => d.name || d.cid || 'Unknown')
+        .attr('font-size', 12)
+        .attr('dx', 15)
+        .attr('dy', 5);
+    
+    // Update positions on simulation tick
+    simulation.on('tick', () => {
+        link
+            .attr('x1', d => d.source.x)
+            .attr('y1', d => d.source.y)
+            .attr('x2', d => d.target.x)
+            .attr('y2', d => d.target.y);
+        
+        node
+            .attr('cx', d => d.x)
+            .attr('cy', d => d.y);
+        
+        labels
+            .attr('x', d => d.x)
+            .attr('y', d => d.y);
+    });
+    
+    // Drag functions
+    function dragstarted(event, d) {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+    }
+    
+    function dragged(event, d) {
+        d.fx = event.x;
+        d.fy = event.y;
+    }
+    
+    function dragended(event, d) {
+        if (!event.active) simulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+    }
+}
+</script>
+{% endblock %}

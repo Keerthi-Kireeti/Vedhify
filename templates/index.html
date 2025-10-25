@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="main-container">
+    <div class="header">
+        <h1><i class="fas fa-leaf"></i> Ayurvedic AI Analyzer</h1>
+        <p>Bridging Ancient Wisdom with Modern Science</p>
+    </div>
+    
+    <div class="step-indicator">
+        <div class="step" id="step1">
+            <i class="fas fa-file-text"></i><br>
+            <small>Input Text</small>
+        </div>
+        <div class="step" id="step2">
+            <i class="fas fa-brain"></i><br>
+            <small>NLP Analysis</small>
+        </div>
+        <div class="step" id="step3">
+            <i class="fas fa-project-diagram"></i><br>
+            <small>Knowledge Graph</small>
+        </div>
+        <div class="step" id="step4">
+            <i class="fas fa-flask"></i><br>
+            <small>PubChem API</small>
+        </div>
+        <div class="step" id="step5">
+            <i class="fas fa-lightbulb"></i><br>
+            <small>Hypothesis</small>
+        </div>
+    </div>
+    
+    <div class="input-section">
+        <h3><i class="fas fa-microscope"></i> Analyze Ayurvedic Text</h3>
+        <p>Paste a snippet from an ancient Ayurvedic text to analyze herbs, properties, and generate hypotheses.</p>
+        
+        <div class="demo-text">
+            <strong>Demo Text:</strong> "Turmeric (Curcuma longa) combined with black pepper (Piper nigrum) enhances bioavailability. The hot property of these herbs aids in digestion and reduces inflammation."
+        </div>
+        
+        <form id="analysisForm">
+            <div class="mb-3">
+                <label for="textInput" class="form-label">Ayurvedic Text:</label>
+                <textarea class="form-control" id="textInput" rows="6" placeholder="Enter Ayurvedic text here...">Turmeric (Curcuma longa) combined with black pepper (Piper nigrum) enhances bioavailability. The hot property of these herbs aids in digestion and reduces inflammation.</textarea>
+            </div>
+            <button type="submit" class="btn btn-analyze">
+                <i class="fas fa-search"></i> Analyze Text
+            </button>
+        </form>
+    </div>
+    
+    <div class="loading" id="loading">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-3">Analyzing text... This may take a few seconds.</p>
+    </div>
+    
+    <div class="results-section" id="results">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="result-card">
+                    <h3><i class="fas fa-seedling"></i> Extracted Herbs</h3>
+                    <div id="herbsResult"></div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="result-card">
+                    <h3><i class="fas fa-atom"></i> Modern Compounds</h3>
+                    <div id="compoundsResult"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="result-card">
+                    <h3><i class="fas fa-yin-yang"></i> Ayurvedic Properties</h3>
+                    <div id="propertiesResult"></div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="result-card">
+                    <h3><i class="fas fa-chart-line"></i> Therapeutic Actions</h3>
+                    <div id="actionsResult"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-12">
+                <div class="hypothesis-card">
+                    <h3><i class="fas fa-lightbulb"></i> Generated Hypotheses</h3>
+                    <div id="hypothesesResult"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('analysisForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const text = document.getElementById('textInput').value;
+    if (!text.trim()) {
+        alert('Please enter some text to analyze.');
+        return;
+    }
+    
+    // Show loading and hide results
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('results').style.display = 'none';
+    
+    // Reset steps
+    resetSteps();
+    
+    // Animate steps
+    animateSteps();
+    
+    // Make API call
+    fetch('/api/analyze', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text: text })
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('loading').style.display = 'none';
+        
+        if (data.success) {
+            displayResults(data);
+            document.getElementById('results').style.display = 'block';
+        } else {
+            showError(data.error || 'An error occurred during analysis.');
+        }
+    })
+    .catch(error => {
+        document.getElementById('loading').style.display = 'none';
+        showError('Network error: ' + error.message);
+    });
+});
+
+function resetSteps() {
+    const steps = document.querySelectorAll('.step');
+    steps.forEach(step => {
+        step.classList.remove('active', 'completed');
+    });
+}
+
+function animateSteps() {
+    const steps = document.querySelectorAll('.step');
+    steps.forEach((step, index) => {
+        setTimeout(() => {
+            step.classList.add('active');
+            setTimeout(() => {
+                step.classList.remove('active');
+                step.classList.add('completed');
+            }, 1000);
+        }, index * 500);
+    });
+}
+
+function displayResults(data) {
+    // Display herbs
+    const herbsHtml = data.results.map(result => 
+        `<span class="herb-badge">${result.herb.name}</span>`
+    ).join('');
+    document.getElementById('herbsResult').innerHTML = herbsHtml;
+    
+    // Display compounds
+    let compoundsHtml = '';
+    data.results.forEach(result => {
+        if (result.compounds.length > 0) {
+            compoundsHtml += `<h5>${result.herb.name}:</h5>`;
+            compoundsHtml += result.compounds.map(compound => 
+                `<span class="compound-item">${compound.molecular_formula || compound.name}</span>`
+            ).join('');
+        }
+    });
+    document.getElementById('compoundsResult').innerHTML = compoundsHtml;
+    
+    // Display properties
+    let propertiesHtml = '';
+    data.results.forEach(result => {
+        const herb = result.herb;
+        propertiesHtml += `<h5>${herb.name}:</h5>`;
+        if (herb.rasa && herb.rasa.length > 0) {
+            propertiesHtml += `<strong>Rasa:</strong> ${herb.rasa.join(', ')}<br>`;
+        }
+        if (herb.guna && herb.guna.length > 0) {
+            propertiesHtml += `<strong>Guna:</strong> ${herb.guna.join(', ')}<br>`;
+        }
+        if (herb.virya && herb.virya !== 'unknown') {
+            propertiesHtml += `<strong>Virya:</strong> ${herb.virya}<br>`;
+        }
+        propertiesHtml += '<br>';
+    });
+    document.getElementById('propertiesResult').innerHTML = propertiesHtml;
+    
+    // Display therapeutic actions
+    let actionsHtml = '';
+    data.results.forEach(result => {
+        if (result.herb.therapeutic_actions) {
+            actionsHtml += `<h5>${result.herb.name}:</h5>`;
+            actionsHtml += result.herb.therapeutic_actions.map(action => 
+                `<span class="property-item">${action}</span>`
+            ).join('');
+            actionsHtml += '<br><br>';
+        }
+    });
+    document.getElementById('actionsResult').innerHTML = actionsHtml;
+    
+    // Display hypotheses
+    let hypothesesHtml = '';
+    data.results.forEach(result => {
+        result.hypotheses.forEach(hypothesis => {
+            hypothesesHtml += `<div class="mb-4">`;
+            hypothesesHtml += `<h4>${hypothesis.ayurvedic_property || hypothesis.type || 'Hypothesis'}</h4>`;
+            if (hypothesis.predicted_bioactivity) {
+                hypothesesHtml += `<p><strong>Predicted Bioactivity:</strong> ${hypothesis.predicted_bioactivity.join(', ')}</p>`;
+            }
+            if (hypothesis.mechanism) {
+                hypothesesHtml += `<p><strong>Mechanism:</strong> ${hypothesis.mechanism}</p>`;
+            }
+            if (hypothesis.message) {
+                hypothesesHtml += `<p>${hypothesis.message}</p>`;
+            }
+            if (hypothesis.compounds) {
+                hypothesesHtml += `<p><strong>Compounds:</strong> ${hypothesis.compounds.join(', ')}</p>`;
+            }
+            hypothesesHtml += `</div>`;
+        });
+    });
+    document.getElementById('hypothesesResult').innerHTML = hypothesesHtml;
+}
+
+function showError(message) {
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'error-message';
+    errorDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
+    
+    const container = document.querySelector('.main-container');
+    container.insertBefore(errorDiv, container.firstChild);
+    
+    setTimeout(() => {
+        errorDiv.remove();
+    }, 5000);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,55 @@
+/* Theme + animated background */
+:root {
+  --bg-start: #071027;
+  --bg-mid: #0f172a;
+  --accent-1: #3b82f6;
+  --accent-2: #f97316;
+}
+
+/* page background + subtle motion */
+html, body, #__next {
+  height: 100%;
+}
+body {
+  background: linear-gradient(135deg, var(--bg-start), rgba(59,130,246,0.06) 35%, rgba(249,115,22,0.03) 85%);
+  background-size: 400% 400%;
+  animation: gradientShift 18s ease infinite, fadeIn 0.45s ease;
+  color: #e6eef8;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* floating blurred shapes behind UI */
+.bg-shape {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  overflow: hidden;
+}
+.bg-shape span {
+  position: absolute;
+  width: 520px;
+  height: 520px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(249,115,22,0.12), transparent 30%),
+              radial-gradient(circle at 70% 70%, rgba(59,130,246,0.10), transparent 40%);
+  filter: blur(64px);
+  opacity: 0.95;
+  transform: translate3d(0,0,0);
+  animation: float 14s ease-in-out infinite;
+}
+.bg-shape span:nth-child(1) { left: -18%; top: -6%; animation-duration: 16s; transform: scale(1.05); }
+.bg-shape span:nth-child(2) { right: -10%; bottom: -12%; animation-duration: 20s; transform: scale(0.9); }
+
+@keyframes gradientShift {
+  0%{background-position:0% 50%}
+ 50%{background-position:100% 50%}
+100%{background-position:0% 50%}
+}
+@keyframes float {
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-36px) rotate(6deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+@keyframes fadeIn { from { opacity:0; transform: translateY(6px)} to { opacity:1; transform:none } }
